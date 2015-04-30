@@ -38,10 +38,12 @@ typedef struct {
     unsigned int killing;  /* index+1 of dying slab, or zero if none */
     size_t requested; /* The number of requested bytes */
 } slabclass_t;
-
+//子块类型 201，0没有使用
 static slabclass_t slabclass[MAX_NUMBER_OF_SLAB_CLASSES];
+//内存限制
 static size_t mem_limit = 0;
 static size_t mem_malloced = 0;
+//字块类型最大数
 static int power_largest;
 
 static void *mem_base = NULL;
@@ -94,6 +96,7 @@ unsigned int slabs_clsid(const size_t size) {
  */
 void slabs_init(const size_t limit, const double factor, const bool prealloc) {
     int i = POWER_SMALLEST - 1;
+    //chunk_size=48
     unsigned int size = sizeof(item) + settings.chunk_size;
 
     mem_limit = limit;
@@ -111,9 +114,10 @@ void slabs_init(const size_t limit, const double factor, const bool prealloc) {
     }
 
     memset(slabclass, 0, sizeof(slabclass));
-
+    //item_size_max=1024 * 1024
     while (++i < POWER_LARGEST && size <= settings.item_size_max / factor) {
         /* Make sure items are always n-byte aligned */
+        //8字节对齐
         if (size % CHUNK_ALIGN_BYTES)
             size += CHUNK_ALIGN_BYTES - (size % CHUNK_ALIGN_BYTES);
 

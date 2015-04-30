@@ -300,6 +300,7 @@ static void cqi_free(CQ_ITEM *item) {
 /*
  * Creates a worker thread.
  */
+ //创建工作线程
 static void create_worker(void *(*func)(void *), void *arg) {
     pthread_t       thread;
     pthread_attr_t  attr;
@@ -778,10 +779,13 @@ void slab_stats_aggregate(struct thread_stats *stats, struct slab_stats *out) {
  * nthreads  Number of worker event handler threads to spawn
  * main_base Event base for main thread
  */
+ 
+ //工作线程初始化
 void thread_init(int nthreads, struct event_base *main_base) {
     int         i;
     int         power;
-
+    
+    //初始化各种锁和条件变量 
     pthread_mutex_init(&cache_lock, NULL);
     pthread_mutex_init(&stats_lock, NULL);
 
@@ -792,6 +796,7 @@ void thread_init(int nthreads, struct event_base *main_base) {
     cqi_freelist = NULL;
 
     /* Want a wide lock table, but don't waste memory */
+    //Memcached对hash表的锁采用分段锁，按线程个数来分段，默认总共是1<<16个hash值，而锁的数目是1<<power个
     if (nthreads < 3) {
         power = 10;
     } else if (nthreads < 4) {
@@ -802,8 +807,9 @@ void thread_init(int nthreads, struct event_base *main_base) {
         /* 8192 buckets, and central locks don't scale much past 5 threads */
         power = 13;
     }
-
+    //锁的个数
     item_lock_count = hashsize(power);
+    //申请1<<power个pthread_mutex_t锁，保存在item_locks数组
     item_lock_hashpower = power;
 
     item_locks = calloc(item_lock_count, sizeof(pthread_mutex_t));
@@ -811,31 +817,39 @@ void thread_init(int nthreads, struct event_base *main_base) {
         perror("Can't allocate item locks");
         exit(1);
     }
+    //对这些锁进行初始化
     for (i = 0; i < item_lock_count; i++) {
         pthread_mutex_init(&item_locks[i], NULL);
     }
+    /*创建线程的局部变量，该局部变量的名称为item_lock_type_key,用于保存主hash表所持有的锁的类型 
+    主hash表在进行扩容时，该锁类型会变为全局的锁，否则(不在扩容过程中)，则是局部锁*/
     pthread_key_create(&item_lock_type_key, NULL);
     pthread_mutex_init(&item_global_lock, NULL);
-
+    
+    //申请nthreds个工作线程,LIBEVENT_THREAD是Memcached内部对工作线程的一个封装
     threads = calloc(nthreads, sizeof(LIBEVENT_THREAD));
     if (! threads) {
         perror("Can't allocate thread descriptors");
         exit(1);
     }
-
+    /*分发线程的初始化,分发线程的base为main_base 
+    线程id为main线程的线程id*/ 
     dispatcher_thread.base = main_base;
     dispatcher_thread.thread_id = pthread_self();
-
+    
+    //工作线程的初始化,工作线程和主线程(main线程)是通过pipe管道进行通信的
     for (i = 0; i < nthreads; i++) {
         int fds[2];
+        //初始化pipe管道 
         if (pipe(fds)) {
             perror("Can't create notify pipe");
             exit(1);
         }
-
+        //读管道绑定到工作线程的接收消息的描述符
         threads[i].notify_receive_fd = fds[0];
+        //写管道绑定到工作线程的发送消息的描述符
         threads[i].notify_send_fd = fds[1];
-
+        //添加工作线程到libevent中
         setup_thread(&threads[i]);
         /* Reserve three fds for the libevent base, and two for the pipe */
         stats.reserved_fds += 5;
@@ -847,6 +861,7 @@ void thread_init(int nthreads, struct event_base *main_base) {
     }
 
     /* Wait for all the threads to set themselves up before returning. */
+    //等待所有工作线程创建完毕 
     pthread_mutex_lock(&init_lock);
     wait_for_thread_registration(nthreads);
     pthread_mutex_unlock(&init_lock);

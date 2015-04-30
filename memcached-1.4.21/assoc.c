@@ -33,11 +33,13 @@ typedef  unsigned       char ub1;   /* unsigned 1-byte quantities */
 
 /* how many powers of 2's worth of buckets we use */
 unsigned int hashpower = HASHPOWER_DEFAULT;
-
+//哈希大小
 #define hashsize(n) ((ub4)1<<(n))
+//哈希掩码
 #define hashmask(n) (hashsize(n)-1)
 
 /* Main hash table. This is where we look except during expansion. */
+//主hash表结构定义，在hash表扩容时，会有次hash表，所以有主次hash表区分，该结构是指针的指针，也即相当于指针数组
 static item** primary_hashtable = 0;
 
 /*
@@ -60,7 +62,9 @@ static bool started_expanding = false;
 static unsigned int expand_bucket = 0;
 
 void assoc_init(const int hashtable_init) {
+    //如果设置了初始化参数，则按设置的参数进行初始化
     if (hashtable_init) {
+        //HASHPOWER_DEFAULT 16
         hashpower = hashtable_init;
     }
     primary_hashtable = calloc(hashsize(hashpower), sizeof(void *));
@@ -68,6 +72,7 @@ void assoc_init(const int hashtable_init) {
         fprintf(stderr, "Failed to init hashtable.\n");
         exit(EXIT_FAILURE);
     }
+    //全局统计信息加锁，保证数据同步
     STATS_LOCK();
     stats.hash_power_level = hashpower;
     stats.hash_bytes = hashsize(hashpower) * sizeof(void *);
