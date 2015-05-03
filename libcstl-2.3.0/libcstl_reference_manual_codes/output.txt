@@ -1,0 +1,2 @@
+before type register: creation of abc_t type container failed!
+after type register: creation of abc_t type container success!
