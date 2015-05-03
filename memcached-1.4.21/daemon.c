@@ -50,7 +50,6 @@ int daemonize(int nochdir, int noclose)
         return (-1);
     case 0:
         break;
-    //¸¸½ø³ÌÍË³ö
     default:
         _exit(EXIT_SUCCESS);
     }

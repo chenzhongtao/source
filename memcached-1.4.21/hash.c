@@ -6,7 +6,6 @@
 
 int hash_init(enum hashfunc_type type) {
     switch(type) {
-        // д╛хо
         case JENKINS_HASH:
             hash = jenkins_hash;
             settings.hash_algorithm = "jenkins";

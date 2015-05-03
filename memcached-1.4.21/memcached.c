@@ -104,6 +104,7 @@ static void conn_free(conn *c);
 struct stats stats;
 struct settings settings;
 time_t process_started;     /* when the process was started */
+//全局连接表
 conn **conns;
 
 struct slab_rebalance slab_rebal;
@@ -111,6 +112,7 @@ volatile int slab_rebalance_signal;
 
 /** file scope variables **/
 static conn *listen_conn = NULL;
+//最大fd数
 static int max_fds;
 static struct event_base *main_base;
 
@@ -5018,18 +5020,13 @@ static bool sanitycheck(void) {
 
 int main (int argc, char **argv) {
     int c;
-    //锁定内存
     bool lock_memory = false;
-    //以daemon方式运行
     bool do_daemonize = false;
     bool preallocate = false;
-    //指定core文件的大小
     int maxcore = 0;
-    //运行的用户
     char *username = NULL;
-    //pid文件路径
     char *pid_file = NULL;
-    struct passwd *pw;  
+    struct passwd *pw;
     struct rlimit rlim;
     char *buf;
     char unit = '\0';
@@ -5040,11 +5037,8 @@ int main (int argc, char **argv) {
 
     /* udp socket */
     static int *u_socket = NULL;
-    //是否指定内部协议
     bool protocol_specified = false;
-    //是否指定tcp端口
     bool tcp_specified = false;
-    //是否指定udp端口
     bool udp_specified = false;
     enum hashfunc_type hash_type = JENKINS_HASH;
     uint32_t tocrawl;
@@ -5075,82 +5069,49 @@ int main (int argc, char **argv) {
         NULL
     };
 
-    //依赖库检查
     if (!sanitycheck()) {
         return EX_OSERR;
     }
 
-    //信号处理
     /* handle SIGINT */
     signal(SIGINT, sig_handler);
 
-    //初始化设置
     /* init settings */
     settings_init();
 
-    //设置标准错误不使用缓存
     /* set stderr non-buffering (for running under, say, daemontools) */
     setbuf(stderr, NULL);
 
     /* process arguments */
     while (-1 != (c = getopt(argc, argv,
-          //unix socket的权限位信息，unix socket的权限位信息和普通文件的权限位信息一样，默认0700
           "a:"  /* access mask for unix socket */
-          //管理员可以使用shutdown命令，默认是false
           "A"  /* enable admin shutdown commannd */
-          //memcached监听的TCP端口值，默认是11211
           "p:"  /* TCP port number to listen on */
-          //unix socket监听的socket文件路径 by default, not using a unix socket
           "s:"  /* unix socket path to listen on */
-          //memcached监听的UDP端口值，默认是11211 
           "U:"  /* UDP port number to listen on */
-          //memcached使用的最大内存值，默认是64M，命令行的单位为M
           "m:"  /* max memory to use for items in megabytes */
-          //当memcached的内存使用完时，不进行LRU淘汰数据，直接返回错误，该选项就是关闭LRU,默认evict_to_free = 1
           "M"   /* return error on memory exhausted */
-          //memcached的最大连接数,如果不指定，按系统的最大值进行 1024
           "c:"  /* max simultaneous connections */
-          //是否锁定memcached所持有的内存，如果锁定了内存，其他业务持有的内存就会减小
           "k"   /* lock down all paged memory */
-          //帮助信息
           "hi"  /* help, licence info */
-          //core文件的大小，如果不指定，按系统的最大值进行 ,初始0,指定为1 
           "r"   /* maximize core file limit */
-          //调试信息 默认为0
           "v"   /* verbose */
-          //设定以daemon方式运行 
           "d"   /* daemon mode */
-          //绑定的ip信息，如果服务器有多个ip，可以在多个ip上面启动多个Memcached实例，注意：这个不是可接收的IP地址 初始NULL
           "l:"  /* interface to listen on */
-          //memcached运行的用户，如果以root启动，需要指定用户，否则程序错误，退出。
           "u:"  /* user identity to run as */
-          //memcached以daemon方式运行时，保存pid的文件路径信息 
           "P:"  /* save PID in file */
-          //内存的扩容因子，这个关系到Memcached内部初始化空间时的一个变化，1.25 不能小于1
           "f:"  /* factor? */
-          //chunk的最小大小(byte)，后续的增长都是该值*factor来进行增长的 ，默认48
           "n:"  /* minimum space allocated for key+value+flags */
-          //内部worker线程的个数，默认是4个，最大值推荐不超过64个
           "t:"  /* threads */
-          //内部数据存储时的分割符 默认:prefix_delimiter = ':'，detail_enabled = 0
           "D:"  /* prefix delimiter? */
-          //指定内存页的大小，默认内存页大小为4K，页最大不超过2M，调大页的大小，可有效减小页表的大小,提高内存访问的效率
           "L"   /* Large memory pages */
-          //单个worker的最大请求个数，默认20
           "R:"  /* max requests per event */
-          //禁用业务的cas,即compare and set 默认settings.use_cas = true
           "C"   /* Disable use of CAS */
-          //listen操作缓存连接个数 默认settings.backlog = 1024
           "b:"  /* backlog queue limit */
-          //memcached内部使用的协议，支持二进制协议和文本协议，早期只有文本协议，二进制协议是后续加上的  默认settings.binding_protocol = negotiating_prot
           "B:"  /* Binding protocol */
-           //单个item的最大值，默认是1M,可以修改，修改的最小值为1k,最大值不能超过128M  settings.item_size_max = 1024 * 1024
           "I:"  /* Max item size */
-          //打开sasl安全协议
           "S"   /* Sasl ON */
-          //默认 settings.flush_enabled = true
           "F"   /* Disable flush_all */
-          //有四个参数项可以设置: 
           "o:"  /* Extended generic options */
         ))) {
         switch (c) {
@@ -5447,14 +5408,12 @@ int main (int argc, char **argv) {
      * Use one workerthread to serve each UDP port if the user specified
      * multiple ports
      */
-     // 如果有指定网口，且不止一个
     if (settings.inter != NULL && strchr(settings.inter, ',')) {
         settings.num_threads_per_udp = 1;
     } else {
         settings.num_threads_per_udp = settings.num_threads;
     }
 
-    //使用sasl安全协议，只能使用二进制协议
     if (settings.sasl) {
         if (!protocol_specified) {
             settings.binding_protocol = binary_prot;
@@ -5466,14 +5425,12 @@ int main (int argc, char **argv) {
         }
     }
 
-    //只指定一个协议的端口，另一个也使用相同的端口
     if (tcp_specified && !udp_specified) {
         settings.udpport = settings.port;
     } else if (udp_specified && !tcp_specified) {
         settings.port = settings.udpport;
     }
 
-    //指定core文件的大小
     if (maxcore != 0) {
         struct rlimit rlim_new;
         /*
@@ -5484,6 +5441,7 @@ int main (int argc, char **argv) {
             rlim_new.rlim_cur = rlim_new.rlim_max = RLIM_INFINITY;
             if (setrlimit(RLIMIT_CORE, &rlim_new)!= 0) {
                 /* failed. try raising just to the old max */
+                //失败，设置回旧值
                 rlim_new.rlim_cur = rlim_new.rlim_max = rlim.rlim_max;
                 (void)setrlimit(RLIMIT_CORE, &rlim_new);
             }
@@ -5504,7 +5462,7 @@ int main (int argc, char **argv) {
      * If needed, increase rlimits to allow as many connections
      * as needed.
      */
-
+    //设置一个进程能打开的最大文件数
     if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
         fprintf(stderr, "failed to getrlimit number of files\n");
         exit(EX_OSERR);
@@ -5518,18 +5476,15 @@ int main (int argc, char **argv) {
     }
 
     /* lose root privileges if we have them */
-    //实际用户ID 有效用户ID
     if (getuid() == 0 || geteuid() == 0) {
         if (username == 0 || *username == '\0') {
             fprintf(stderr, "can't run as root without the -u switch\n");
             exit(EX_USAGE);
         }
-        //获得用户的登录信息
         if ((pw = getpwnam(username)) == 0) {
             fprintf(stderr, "can't find the user %s to switch to\n", username);
             exit(EX_NOUSER);
         }
-        //设置组ID和用户ID
         if (setgid(pw->pw_gid) < 0 || setuid(pw->pw_uid) < 0) {
             fprintf(stderr, "failed to assume identity of user %s\n", username);
             exit(EX_OSERR);
@@ -5538,19 +5493,15 @@ int main (int argc, char **argv) {
 
     /* Initialize Sasl if -S was specified */
     if (settings.sasl) {
-        //初始化sasl协议
         init_sasl();
     }
 
     /* daemonize if requested */
     /* if we want to ensure our ability to dump core, don't chdir to / */
     if (do_daemonize) {
-        //忽略SIGHUP信号
         if (sigignore(SIGHUP) == -1) {
             perror("Failed to ignore SIGHUP");
         }
-        // daemonize(int nochdir, int noclose)
-        // settings.verbose调试，不关闭标准I/O
         if (daemonize(maxcore, settings.verbose) == -1) {
             fprintf(stderr, "failed to daemon() in order to daemonize\n");
             exit(EXIT_FAILURE);
@@ -5574,10 +5525,13 @@ int main (int argc, char **argv) {
     main_base = event_init();
 
     /* initialize other stuff */
-    //初始化全局变量stats
+    // Global stats统计信息的初始化
     stats_init();
+    //哈希表内存分配
     assoc_init(settings.hashpower_init);
+    //全局连接表初始化
     conn_init();
+    //内存池初始化
     slabs_init(settings.maxbytes, settings.factor, preallocate);
 
     /*
@@ -5589,6 +5543,9 @@ int main (int argc, char **argv) {
         exit(EX_OSERR);
     }
     /* start up worker threads if MT mode */
+    //Memcached采用了典型的Master-Worker的线程模式，Master就是由main线程来充当，
+    //而Worker线程则是通过Pthread创建的
+    //传入线程个数和libevent的main_base实例
     thread_init(settings.num_threads, main_base);
 
     if (start_assoc_maintenance_thread() == -1) {

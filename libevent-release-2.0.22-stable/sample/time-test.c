@@ -81,6 +81,7 @@ main(int argc, char **argv)
 #endif
 
 	if (argc == 2 && !strcmp(argv[1], "-p")) {
+        //事件是否持久
 		event_is_persistent = 1;
 		flags = EV_PERSIST;
 	} else {
@@ -89,17 +90,20 @@ main(int argc, char **argv)
 	}
 
 	/* Initalize the event library */
+    //初始化一个Reactor实例
 	base = event_base_new();
 
 	/* Initalize one event */
+    //初始化一个事件
 	event_assign(&timeout, base, -1, flags, timeout_cb, (void*) &timeout);
-
+    //清空时间
 	evutil_timerclear(&tv);
 	tv.tv_sec = 2;
 	event_add(&timeout, &tv);
-
+    //获取当前时间
 	evutil_gettimeofday(&lasttime, NULL);
 
+    //事件分发，程序进入无限循环，等待就绪事件并执行事件处理
 	event_base_dispatch(base);
 
 	return (0);

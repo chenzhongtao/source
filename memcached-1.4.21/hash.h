@@ -2,7 +2,6 @@
 #define    HASH_H
 
 typedef uint32_t (*hash_func)(const void *key, size_t length);
-// ¹şÏ£º¯ÊıÖ¸Õë
 hash_func hash;
 
 enum hashfunc_type {
