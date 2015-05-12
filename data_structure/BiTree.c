@@ -19,6 +19,12 @@ typedef struct BiTNode{
     struct BiTNode *lchild, *rchild;          
 }BiTNode, *BiTree;
 
+//定义链表节点  
+typedef struct LNode  
+{  
+ Elemtype data;    //数据域  
+ struct LNode * next; //指针域  
+}LNode, * LinkList;    //LNODE等价于struct LNode, PNODE等价于struct LNode *  
 
 //顺序栈的存储结构定义  
 #define STACK_INIT_SIZE 100 /* 存储空间初始分配容量 */ 
@@ -201,10 +207,9 @@ BiTree CreateBiTree2(char Pre[],int ps,int pe,
 int num=0;		//num为叶子数，全局量，初始化为0
 void leaf(BiTree t) {
   if(t==NULL) return;	//空树什么都不做
-  if(t->lchild==NULL && t->rchild==NULL) num++;
-　　　　　　　　　//访问根：若为叶子，则叶子数+1
+  if(t->lchild==NULL && t->rchild==NULL) num++; //访问根：若为叶子，则叶子数+1
   leaf(t->lchild);	//访问左子树：累计其中的叶子数
-  leaf(t?\->rchild);	//访问右子树：累计其中的叶子数
+  leaf(t->rchild);	//访问右子树：累计其中的叶子数
 }
 
 //递归处理：叶子数等于左子树和右子树的叶子数之和，左子树和右子树本身
@@ -225,37 +230,60 @@ int leaf2(BiTree t) {	//叶子数通过函数值返回
 int detect(BiTree t) {
   int x;
   if(t==NULL) return 1;	//空树
-  if(t->data<'0'|| t->data>'9')return 0;
-　　　　　　//访问根：若非数字字符，则跳过子树检查
+  if(t->data<'0'|| t->data>'9')return 0;//访问根：若非数字字符，则跳过子树检查
   x=detect(t->lchild); 
-　if(x==0) return 0;
-　　　　　　//遍历左子树，若为假，则跳过右子树检查
+  if(x==0) return 0; //遍历左子树，若为假，则跳过右子树检查
   x=detect(t->rchild); //遍历右子树
-  return x; 		　　//最后结果由右子树决定
+  return x;            //最后结果由右子树决定
 }
 
 //递归处理：如果根不是数字字符，则当前结果肯定为假，返回；否则
 //当前结果由左子树和右子树的情况共同决定
 int detect2(BiTree t) {
   if(t==NULL) return 1;	//认为空树符合条件(真)
-  if(t->data<'0'||t->data>'9') return 0;
-　　　　　　　　　　　　//访问根：若不是数字字符则返回假
-  return detect2(t->lchild) && detect2(t->rchild);
-　　　　　　　　　　　　//左子树和右子树共同决定
+  if(t->data<'0'||t->data>'9') return 0;//访问根：若不是数字字符则返回假
+  return detect2(t->lchild) && detect2(t->rchild);//左子树和右子树共同决定
 }
 
 //判断两棵二叉树是否等价，即要么都为空；要么根相同，
 //且左右子树分别等价。 
 int same(BiTree t1,BiTree t2) {
   if(t1==NULL && t2==NULL) return 1;//同时为空树
-  if(t1==NULL || t2==NULL) return 0;
-　　　　　　　　　　　　　　　　//一个为空，另一个非空
-  if(t1->data!=t2->data) return 0;	　//根不相等
+  if(t1==NULL || t2==NULL) return 0;//一个为空，另一个非空
+  if(t1->data!=t2->data) return 0;  //根不相等
   return same(t1->lchild,t2->lchild)
-　　　 && same(t1->rchild,t2->rchild);
-　　　　　　　 　　　　　　　 //左子树和右子树共同决定
+    && same(t1->rchild,t2->rchild);//左子树和右子树共同决定
 }
 
+//求根到某个指定节点的路径
+LinkList path(BiTree t1,Elemtype data) {
+    LinkList l;
+    LinkList child;
+    if(t1==NULL ) return NULL;
+    if(t1->data == data) 
+    {
+        l= (LinkList)malloc(sizeof(LNode)); 
+        l->next = NULL;
+        l->data = data;
+        return l;
+    }
+    if ((child = path(t1->lchild, data)) != NULL)
+    {
+        l= (LinkList)malloc(sizeof(LNode)); 
+        l->next = child;
+        l->data = t1->data;
+        return l;
+    }
+    else if ((child = path(t1->rchild, data)) != NULL)
+    {
+        l= (LinkList)malloc(sizeof(LNode)); 
+        l->next = child;
+        l->data = t1->data;
+        return l;
+    }
+    else
+        return NULL;
+}
 
 int main()
 {
@@ -288,6 +316,14 @@ int main()
     printf("\n");
     LevelOrderTraverse(T, Visit);
     printf("\n");
+
+    LinkList l = path(T,'E');
+    while(NULL != l)  
+    {  
+        printf("%c  ", l->data);  
+        l = l->next;  
+    }  
+    printf("\n"); 
 }
 
 
