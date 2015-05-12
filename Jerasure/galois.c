@@ -45,6 +45,7 @@ plank@cs.utk.edu
 #define LOGS (13)
 #define SPLITW8 (14)
 
+//本源多项式，8进制数
 static int prim_poly[33] = 
 { 0, 
 /*  1 */     1, 
@@ -80,6 +81,10 @@ static int prim_poly[33] =
 /* 31 */    020000000011, 
 /* 32 */    00020000007 };  /* Really 40020000007, but we're omitting the high order bit */
 
+
+/*
+不同位数使用不同方法，在内存和效率之间均衡。
+*/
 static int mult_type[33] = 
 { NONE, 
 /*  1 */   TABLE, 
@@ -149,6 +154,7 @@ NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
 static int *galois_split_w8[7] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
+//创建对数表和反对数表(指数)
 int galois_create_log_tables(int w)
 {
   int j, b;
@@ -166,12 +172,12 @@ int galois_create_log_tables(int w)
   }
   
   for (j = 0; j < nw[w]; j++) {
-    galois_log_tables[w][j] = nwm1[w];
-    galois_ilog_tables[w][j] = 0;
+    galois_log_tables[w][j] = nwm1[w]; //全1
+    galois_ilog_tables[w][j] = 0;// 全0
   } 
   
   b = 1;
-  for (j = 0; j < nwm1[w]; j++) {
+  for (j = 0; j < nwm1[w]; j++) {  //2//2^w-1 个数循环
     if (galois_log_tables[w][b] != nwm1[w]) {
       fprintf(stderr, "Galois_create_log_tables Error: j=%d, b=%d, B->J[b]=%d, J->B[j]=%d (0%o)\n",
               j, b, galois_log_tables[w][b], galois_ilog_tables[w][j], (b << 1) ^ prim_poly[w]);
@@ -180,9 +186,9 @@ int galois_create_log_tables(int w)
     galois_log_tables[w][b] = j;
     galois_ilog_tables[w][j] = b;
     b = b << 1;
-    if (b & nw[w]) b = (b ^ prim_poly[w]) & nwm1[w];
+    if (b & nw[w]) b = (b ^ prim_poly[w]) & nwm1[w]; //超过范围与本源多项式求异或
   }
-  for (j = 0; j < nwm1[w]; j++) {
+  for (j = 0; j < nwm1[w]; j++) { //重复三份
     galois_ilog_tables[w][j+nwm1[w]] = galois_ilog_tables[w][j];
     galois_ilog_tables[w][j+nwm1[w]*2] = galois_ilog_tables[w][j];
   } 
@@ -215,6 +221,7 @@ int galois_logtable_divide(int x, int y, int w)
   return z;
 }
 
+//创建galois乘法表,和除法表
 int galois_create_mult_tables(int w)
 {
   int j, x, y, logx;
@@ -242,6 +249,11 @@ int galois_create_mult_tables(int w)
   }
 
  /* Set mult/div tables for x = 0 */
+ /* 0乘以任何数位0；
+    0除以任何非零数位0；
+    0被任何数除为-1；
+    galois_log_tables[w][0]没有值的，或者说没意义的
+ */
   j = 0;
   galois_mult_tables[w][j] = 0;   /* y = 0 */
   galois_div_tables[w][j] = -1;
@@ -289,6 +301,11 @@ int galois_log(int value, int w)
 }
 
 
+/*
+移位乘法，
+如w=4,x=0110,y=0111
+可以看成0010*y + 0100*y
+*/
 int galois_shift_multiply(int x, int y, int w)
 {
   int prod;
@@ -299,6 +316,7 @@ int galois_shift_multiply(int x, int y, int w)
   prod = 0;
   for (i = 0; i < w; i++) {
     scratch[i] = y;
+    // y=y*2
     if (y & (1 << (w-1))) {
       y = y << 1;
       y = (y ^ prim_poly[w]) & nwm1[w];
@@ -309,6 +327,7 @@ int galois_shift_multiply(int x, int y, int w)
   for (i = 0; i < w; i++) {
     ind = (1 << i);
     if (ind & x) {
+      //下面为什么要一位一位异或，不W位一起来。
       j = 1;
       for (k = 0; k < w; k++) {
         prod = prod ^ (j & scratch[i]);
@@ -333,7 +352,7 @@ int galois_single_multiply(int x, int y, int w)
         exit(1);
       }
     }
-    return galois_mult_tables[w][(x<<w)|y];
+    return galois_mult_tables[w][(x<<w)|y]; // x*w+y
   } else if (mult_type[w] == LOGS) {
     if (galois_log_tables[w] == NULL) {
       if (galois_create_log_tables(w) < 0) {
@@ -754,6 +773,21 @@ void galois_region_xor(           char *r1,         /* Region 1 */
   }
 }
 
+
+/*
+创建7个8位乘法表
+例如A=a3 a2 a1 a0 (a0 为A的低0-7位，a3为高8位)
+    B=b3 b2 b1 b0
+    这7各表分别为:
+    a0*b0  (0-2^16-1)
+    a0*b1  (2^8-2^24-1)
+    a0*b2  (2^16-2^32-1)
+    a0*b3  (2^24-2^40-1)
+    a3*b1  (2^32-2^48-1)
+    a3*b2  (2^40-2^56-1)
+    a3*ba  (2^48-2^64-1)
+任何32位数相乘都可以看成这7个表中对应值之和
+*/
 int galois_create_split_w8_tables()
 {
   int p1, p2, i, j, p1elt, p2elt, index, ishift, jshift, *table;
@@ -793,11 +827,11 @@ int galois_split_w8_multiply(int x, int y)
 {
   int i, j, a, b, accumulator, i8, j8;
 
-  accumulator = 0;
+  accumulator = 0;//累加器
   
   i8 = 0;
   for (i = 0; i < 4; i++) {
-    a = (((x >> i8) & 255) << 8);
+    a = (((x >> i8) & 255) << 8); //8位8位取
     j8 = 0;
     for (j = 0; j < 4; j++) {
       b = ((y >> j8) & 255);

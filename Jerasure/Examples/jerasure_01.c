@@ -62,7 +62,7 @@ int main(int argc, char **argv)
   n = 1;
   for (i = 0; i < r*c; i++) {
     matrix[i] = n;
-    n = galois_single_multiply(n, 2, w);
+    n = galois_single_multiply(n, 2, w);//Ù¤ÂÞÍßÓò³Ë·¨ÔËËã
   }
 
   jerasure_print_matrix(matrix, r, c, w);

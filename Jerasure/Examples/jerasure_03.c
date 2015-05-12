@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     }
   }
 
-  printf("The Cauchy Matrix:\n");
+  printf("The Cauchy Matrix:\n"); //¿ÂÎ÷¾ØÕó
   jerasure_print_matrix(matrix, k, k, w);
   memcpy(matrix_copy, matrix, sizeof(int)*k*k);
   i = jerasure_invertible_matrix(matrix_copy, k, w);

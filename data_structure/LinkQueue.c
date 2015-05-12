@@ -24,7 +24,8 @@ typedef struct
 {  
     QueuePtr front;  
     QueuePtr rear;  
-}LinkQueue;  
+}LinkQueue;
+
   
 Status InitQueue(LinkQueue *Q)  
 {  

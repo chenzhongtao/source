@@ -254,6 +254,7 @@ int jerasure_matrix_decode(int k, int m, int w, int *matrix, int row_k_ones, int
 }
 
 
+/*普通矩阵转为位矩阵*/
 int *jerasure_matrix_to_bitmatrix(int k, int m, int w, int *matrix) 
 {
   int *bitmatrix;
@@ -282,6 +283,7 @@ int *jerasure_matrix_to_bitmatrix(int k, int m, int w, int *matrix)
   return bitmatrix;
 }
 
+/*矩阵编码*/
 void jerasure_matrix_encode(int k, int m, int w, int *matrix,
                           char **data_ptrs, char **coding_ptrs, int size)
 {
@@ -357,6 +359,7 @@ void jerasure_do_parity(int k, char **data_ptrs, char *parity_ptr, int size)
   }
 }
 
+/*  求逆矩阵 */
 int jerasure_invert_matrix(int *mat, int *inv, int rows, int w)
 {
   int cols, i, j, k, x, rs2;
@@ -365,6 +368,7 @@ int jerasure_invert_matrix(int *mat, int *inv, int rows, int w)
   cols = rows;
 
   k = 0;
+  /* 生成单位矩阵 */
   for (i = 0; i < rows; i++) {
     for (j = 0; j < cols; j++) {
       inv[k] = (i == j) ? 1 : 0;
@@ -373,6 +377,9 @@ int jerasure_invert_matrix(int *mat, int *inv, int rows, int w)
   }
 
   /* First -- convert into upper triangular  */
+  /* 求三角矩阵的解释见jerasure_invertible_matrix函数；
+  这里原矩阵与单位矩阵做同样的运算*/
+  
   for (i = 0; i < cols; i++) {
     row_start = cols*i;
 
@@ -426,7 +433,10 @@ int jerasure_invert_matrix(int *mat, int *inv, int rows, int w)
     }
   }
 
+
   /* Now the matrix is upper triangular.  Start at the top and multiply down  */
+  /*上三角矩阵转单位矩阵
+  从后往前依次把A_ii上的元素转为0*/
 
   for (i = rows-1; i >= 0; i--) {
     row_start = i*cols;
@@ -444,6 +454,7 @@ int jerasure_invert_matrix(int *mat, int *inv, int rows, int w)
   return 0;
 }
 
+//判断矩阵是否可逆，是返回1
 int jerasure_invertible_matrix(int *mat, int rows, int w)
 {
   int cols, i, j, k, x, rs2;
@@ -451,7 +462,15 @@ int jerasure_invertible_matrix(int *mat, int rows, int w)
  
   cols = rows;
 
-  /* First -- convert into upper triangular  */
+  /* First -- convert into upper triangular 上三角矩阵 */
+  /*
+  如何矩阵都可以转为三角矩阵
+  上三角矩阵转化算法:
+  1:把A_11元素下面的元素转为0；
+  2:把A_22元素下面的元素转为0；
+  ......
+  三角矩阵对角线有零元素，则矩阵不可逆
+  */
   for (i = 0; i < cols; i++) {
     row_start = cols*i;
 
@@ -461,6 +480,7 @@ int jerasure_invertible_matrix(int *mat, int rows, int w)
     if (mat[row_start+i] == 0) { 
       for (j = i+1; j < rows && mat[cols*j+i] == 0; j++) ;
       if (j == rows) return 0;
+      //两行互换
       rs2 = j*cols;
       for (k = 0; k < cols; k++) {
         tmp = mat[row_start+k];
@@ -470,6 +490,7 @@ int jerasure_invertible_matrix(int *mat, int rows, int w)
     }
  
     /* Multiply the row by 1/element i,i  */
+    //这行同乘1/(element i,i)
     tmp = mat[row_start+i];
     if (tmp != 1) {
       inverse = galois_single_divide(1, tmp, w);
@@ -479,6 +500,8 @@ int jerasure_invertible_matrix(int *mat, int rows, int w)
     }
 
     /* Now for each j>i, add A_ji*Ai to Aj  */
+    // 把A_ii同一列下面的转为0 
+    // A_ii为1，A_ji*A_ii+A_ji=0(异或运算中加减是一样的)
     k = row_start+i;
     for (j = i+1; j != cols; j++) {
       k += cols;
@@ -558,6 +581,7 @@ void jerasure_free_schedule_cache(int k, int m, int ***cache)
   free(cache);
 }
 
+//矩阵点积
 void jerasure_matrix_dotprod(int k, int w, int *matrix_row,
                           int *src_ids, int dest_id,
                           char **data_ptrs, char **coding_ptrs, int size)
@@ -1122,7 +1146,7 @@ int jerasure_invertible_bitmatrix(int *mat, int rows)
   return 1;
 }
 
-  
+/* 矩阵相乘 */
 int *jerasure_matrix_multiply(int *m1, int *m2, int r1, int c1, int r2, int c2, int w)
 {
   int *product, i, j, k, l;
