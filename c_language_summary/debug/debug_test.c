@@ -13,7 +13,6 @@ int32_t main(int32_t argc, char **argv)
     LOG_PRINT(D_LOG_INFO,"test debug 1 %s_%d","test",1);
     LOG_PRINT(0,"test debug 1 %s_%d","test",1);
     LOG_PRINT(7,"test debug 1 %s_%d","test",1);
-    printf("%s\n", LOG_NAME[0]);
     return 0;
 }
 
