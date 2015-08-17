@@ -22,7 +22,7 @@ __global__ void add( int *a, int *b, int *c ) {
     int tid = blockIdx.x;
     while (tid < N) {
         c[tid] = a[tid] + b[tid];
-        tid += gridDim.x;
+        tid += gridDim.x;//¿éµÄÊýÄ¿
     }
 }
 

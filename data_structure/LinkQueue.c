@@ -29,6 +29,7 @@ typedef struct
   
 Status InitQueue(LinkQueue *Q)  
 {  
+    //初始时队头队尾指向同一个节点(分配了一个没用的节点，不放数据，相当于头节点)
     Q->front = Q->rear = (QueuePtr)malloc(sizeof(QNode));  
     if(!Q->front) exit(ERROR);  
     Q->front->next = NULL;
@@ -85,7 +86,7 @@ Status DEQueue(LinkQueue *Q, QElemType *e)
     p = Q->front->next;
     *e = p->data;
     Q->front->next = p->next;
-    if(Q->rear == p) Q->rear = Q->front; 
+    if(Q->rear == p) Q->rear = Q->front; //尾节点指向头节点
     free(p);   
     return OK;  
 } 

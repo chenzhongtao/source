@@ -16,10 +16,12 @@
 
 #include "../common/book.h"
 
+//__device__ 函数在设备上被调用
 __device__ int addem( int a, int b ) {
     return a + b;
 }
 
+//__global__ 告诉编译器函数应该编译为在设备上
 __global__ void add( int a, int b, int *c ) {
     *c = addem( a, b );
 }
@@ -27,13 +29,16 @@ __global__ void add( int a, int b, int *c ) {
 int main( void ) {
     int c;
     int *dev_c;
+    //设备上分配内存
     HANDLE_ERROR( cudaMalloc( (void**)&dev_c, sizeof(int) ) );
 
     add<<<1,1>>>( 2, 7, dev_c );
 
+	//设备内存拷贝到主机
     HANDLE_ERROR( cudaMemcpy( &c, dev_c, sizeof(int),
                               cudaMemcpyDeviceToHost ) );
     printf( "2 + 7 = %d\n", c );
+    //释放设备申请的内存
     HANDLE_ERROR( cudaFree( dev_c ) );
 
     return 0;

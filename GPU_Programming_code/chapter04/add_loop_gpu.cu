@@ -45,6 +45,7 @@ int main( void ) {
     HANDLE_ERROR( cudaMemcpy( dev_b, b, N * sizeof(int),
                               cudaMemcpyHostToDevice ) );
 
+	//N 表示设备在执行核函数时使用的并行线程块的数量
     add<<<N,1>>>( dev_a, dev_b, dev_c );
 
     // copy the array 'c' back from the GPU to the CPU

@@ -25,6 +25,7 @@ const int blocksPerGrid =
 
 
 __global__ void dot( float *a, float *b, float *c ) {
+	//共享内存缓冲区，对于每个线程块，创建该变量一个副本，线程块中的每个线程共享这块内存。
     __shared__ float cache[threadsPerBlock];
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int cacheIndex = threadIdx.x;
@@ -39,19 +40,22 @@ __global__ void dot( float *a, float *b, float *c ) {
     cache[cacheIndex] = temp;
     
     // synchronize threads in this block
+    //对线程块中的线程执行同步
     __syncthreads();
 
     // for reductions, threadsPerBlock must be a power of 2
     // because of the following code
-    int i = blockDim.x/2;
+    int i = blockDim.x/2;//每一块中的线程数，线程数要是2的次方
     while (i != 0) {
         if (cacheIndex < i)
             cache[cacheIndex] += cache[cacheIndex + i];
-        __syncthreads();
+        //对线程块中的线程执行同步
+        __syncthreads();//块中的每个线程都要执行，即使cacheIndex > i
         i /= 2;
     }
 
     if (cacheIndex == 0)
+        //每一块的数据之和
         c[blockIdx.x] = cache[0];
 }
 
@@ -70,6 +74,7 @@ int main( void ) {
                               N*sizeof(float) ) );
     HANDLE_ERROR( cudaMalloc( (void**)&dev_b,
                               N*sizeof(float) ) );
+    //分配内存跟线程块大小一样
     HANDLE_ERROR( cudaMalloc( (void**)&dev_partial_c,
                               blocksPerGrid*sizeof(float) ) );
 

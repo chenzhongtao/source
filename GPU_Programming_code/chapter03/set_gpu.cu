@@ -24,8 +24,8 @@ int main( void ) {
     printf( "ID of current CUDA device:  %d\n", dev );
 
     memset( &prop, 0, sizeof( cudaDeviceProp ) );
-    prop.major = 1;
-    prop.minor = 3;
+    prop.major = 1;//主版本号
+    prop.minor = 3;//次版本号
     HANDLE_ERROR( cudaChooseDevice( &dev, &prop ) );
     printf( "ID of CUDA device closest to revision 1.3:  %d\n", dev );
 

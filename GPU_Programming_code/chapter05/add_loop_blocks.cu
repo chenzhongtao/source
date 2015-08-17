@@ -19,7 +19,7 @@
 #define N   10
 
 __global__ void add( int *a, int *b, int *c ) {
-    int tid = threadIdx.x;
+    int tid = threadIdx.x;//线程索引
     if (tid < N)
         c[tid] = a[tid] + b[tid];
 }
@@ -44,7 +44,7 @@ int main( void ) {
                               cudaMemcpyHostToDevice ) );
     HANDLE_ERROR( cudaMemcpy( dev_b, b, N * sizeof(int),
                               cudaMemcpyHostToDevice ) );
-
+	//一个线程块，N个线程
     add<<<1,N>>>( dev_a, dev_b, dev_c );
 
     // copy the array 'c' back from the GPU to the CPU

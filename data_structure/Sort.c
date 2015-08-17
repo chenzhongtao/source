@@ -125,6 +125,24 @@ void ShellInsert(int R[],int n,int h) {
       R[k+h] = temp;	 //插入R[j]
     }
 }
+//跟上面插入排序算法风格保存一致(还没测试)
+void ShellInsert2(int R[], int n, int h)  
+{  
+    int i, j, k, key;  
+    for ( i = 0; i < h-1; ++i ) 
+    { 
+        for(j=i+h; j<n; j+=h)
+        {
+            if ( R[j] < R[j - h] ) {//将R[i]插入有序字表  
+                key = R[j];        //可以R[0]不用，用作哨兵  
+                for ( k = j - h; R[k] > key && k>=0; k -= h ) {  
+                    R[k+h] = R[k];  
+                }  
+                R[k+h] = key;  
+            } 
+        }
+    }  
+}
 void ShellSort(int R[],int n) 
 {
    int i;

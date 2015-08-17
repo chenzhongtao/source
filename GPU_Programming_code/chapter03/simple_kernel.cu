@@ -16,6 +16,7 @@
 
 #include "../common/book.h"
 
+//__global__ 告诉编译器函数应该编译为在设备上
 __global__ void kernel( void ) {
 }
 

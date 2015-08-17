@@ -28,7 +28,7 @@ Status InitQueue(SqQueue *Q)
 {  
     Q->base = (QElemType *)malloc(MAXQSIZE*sizeof(QElemType));  
     if(!Q->base) exit(ERROR); 
-    Q->front = Q->rear = 0;
+    Q->front = Q->rear = 0; //初始时头尾为0
     return OK; 
 }//InitQueue  
   
@@ -43,7 +43,7 @@ Status DestroyQueue(SqQueue *Q)
   
 bool IsEmpty(SqQueue Q)  
 {  
-    if(Q.front == Q.rear)  
+    if(Q.front == Q.rear)  //头尾相等时为空
         return TRUE;  
     return FALSE;  
 }//isEmpty  
@@ -57,7 +57,7 @@ Status EnQueue(SqQueue *Q, QElemType e)
 {  
     if((Q->rear + 1) % MAXQSIZE == Q->front) return ERROR;
     Q->base[Q->rear] = e;
-    Q->rear = (Q->rear + 1) % MAXQSIZE; 
+    Q->rear = (Q->rear + 1) % MAXQSIZE; //队尾指向的节点始终没有数据，所以只能保存MAXQSIZE-1个数据
     return OK;  
 } 
   

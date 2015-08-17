@@ -55,7 +55,8 @@ void kernel( unsigned char *ptr ){
         for (int x=0; x<DIM; x++) {
             int offset = x + y * DIM;
 
-            int juliaValue = julia( x, y );
+            int juliaValue = julia( x, y );//返回0或1 
+            //一个bit32位，红黄蓝，最后一个不知是什么
             ptr[offset*4 + 0] = 255 * juliaValue;
             ptr[offset*4 + 1] = 0;
             ptr[offset*4 + 2] = 0;

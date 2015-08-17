@@ -52,6 +52,7 @@ int main( void ) {
     HANDLE_ERROR( cudaMemcpy( dev_b, b, N * sizeof(int),
                               cudaMemcpyHostToDevice ) );
 
+	//128个线性块，每块128个线性
     add<<<128,128>>>( dev_a, dev_b, dev_c );
 
     // copy the array 'c' back from the GPU to the CPU

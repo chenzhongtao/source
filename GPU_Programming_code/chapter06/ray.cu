@@ -40,7 +40,7 @@ struct Sphere {
 };
 #define SPHERES 20
 
-__constant__ Sphere s[SPHERES];
+__constant__ Sphere s[SPHERES]; //声明为使用常量内存
 
 __global__ void kernel( unsigned char *ptr ) {
     // map from threadIdx/BlockIdx to pixel position
@@ -102,6 +102,7 @@ int main( void ) {
         temp_s[i].z = rnd( 1000.0f ) - 500;
         temp_s[i].radius = rnd( 100.0f ) + 20;
     }
+    //复制到常量内存
     HANDLE_ERROR( cudaMemcpyToSymbol( s, temp_s, 
                                 sizeof(Sphere) * SPHERES) );
     free( temp_s );

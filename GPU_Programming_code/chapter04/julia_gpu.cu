@@ -55,8 +55,8 @@ __device__ int julia( int x, int y ) {
 __global__ void kernel( unsigned char *ptr ) {
     // map from blockIdx to pixel position
     int x = blockIdx.x;
-    int y = blockIdx.y;
-    int offset = x + y * gridDim.x;
+    int y = blockIdx.y;//使用数组就有y了，表示第二维的索引
+    int offset = x + y * gridDim.x;//一个维的长度
 
     // now calculate the value at that position
     int juliaValue = julia( x, y );
@@ -79,7 +79,7 @@ int main( void ) {
     HANDLE_ERROR( cudaMalloc( (void**)&dev_bitmap, bitmap.image_size() ) );
     data.dev_bitmap = dev_bitmap;
 
-    dim3    grid(DIM,DIM);
+    dim3    grid(DIM,DIM);//三维数组，这里最后一维为1,用于指定启动的线程块的数量
     kernel<<<grid,1>>>( dev_bitmap );
 
     HANDLE_ERROR( cudaMemcpy( bitmap.get_ptr(), dev_bitmap,
