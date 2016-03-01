@@ -1,16 +1,46 @@
-include ../Make.defines
 
-PROGS =	mainpipe mainfifo
+DEBUG := y
 
-all:	${PROGS}
+CC = gcc
 
-mainpipe:	mainpipe.o client.o server.o mesg_send.o mesg_recv.o
-		${CC} ${CFLAGS} -o $@ mainpipe.o client.o server.o \
-			mesg_send.o mesg_recv.o ${LIBS}
+ifeq ($(DEBUG), y)
+  DBG_FLAGS := -O0 -Wall -g -DDEBUG -DHAVE_SYS_EPOLL_H
+else
+  DBG_FLAGS := -O2 -Wall -DHAVE_SYS_EPOLL_H
+endif
 
-mainfifo:	mainfifo.o client.o server.o mesg_send.o mesg_recv.o
-		${CC} ${CFLAGS} -o $@ mainfifo.o client.o server.o \
-			mesg_send.o mesg_recv.o ${LIBS}
+#
+#  	add compile flags
+#
+CFLAGS += $(DBG_FLAGS)
 
-clean:
-		rm -f ${PROGS} ${CLEANFILES}
+#CFLAGS += -I$(SW_INC) -I$(USR_INC) 
+#
+#  the lib needed
+#
+LIB_FLAGS =  
+
+
+#
+#	 the app obj name
+#
+obj = mainpipe mainfifo 
+
+
+
+default: $(obj)
+
+
+mainpipe:mainpipe.c client.c server.c mesg_recv.c mesg_send.c ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
+
+	
+mainfifo:mainfifo.c client.c server.c mesg_recv.c mesg_send.c ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
+	
+
+install:
+	#@install -c $(obj) $(BIN_INSTALL)	
+
+clean: 
+	@rm -f *.o $(obj)

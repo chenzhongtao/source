@@ -1,7 +1,7 @@
 /* include writen */
 #include	"unp.h"
 
-ssize_t						/* Write "n" bytes to a descriptor. */
+ssize_t	/* Write "n" bytes to a descriptor. */
 writen(int fd, const void *vptr, size_t n)
 {
 	size_t		nleft;

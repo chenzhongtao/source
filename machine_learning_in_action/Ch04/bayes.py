@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding=utf-8
+
 '''
 Created on Oct 19, 2010
 
@@ -6,22 +9,35 @@ Created on Oct 19, 2010
 from numpy import *
 
 def loadDataSet():
+    """
+    创建实验样本
+    """
     postingList=[['my', 'dog', 'has', 'flea', 'problems', 'help', 'please'],
                  ['maybe', 'not', 'take', 'him', 'to', 'dog', 'park', 'stupid'],
                  ['my', 'dalmation', 'is', 'so', 'cute', 'I', 'love', 'him'],
                  ['stop', 'posting', 'stupid', 'worthless', 'garbage'],
                  ['mr', 'licks', 'ate', 'my', 'steak', 'how', 'to', 'stop', 'him'],
                  ['quit', 'buying', 'worthless', 'dog', 'food', 'stupid']]
-    classVec = [0,1,0,1,0,1]    #1 is abusive, 0 not
+    classVec = [0,1,0,1,0,1]    #1 is abusive, 0 not 1代表侮辱性文字
     return postingList,classVec
                  
 def createVocabList(dataSet):
+    """
+    创建一个包含所有文档中出现的不重复词的列表
+    """
     vocabSet = set([])  #create empty set
     for document in dataSet:
         vocabSet = vocabSet | set(document) #union of the two sets
     return list(vocabSet)
 
 def setOfWords2Vec(vocabList, inputSet):
+    """
+    vocabList：词汇表
+    inputSet： 输入文档
+    输出:
+    returnVec：文档向量，向量的每一个元素为0或1,1表示该单词在文档出现过
+              （这里不考虑出现的次数，属于贝努利模型）
+    """
     returnVec = [0]*len(vocabList)
     for word in inputSet:
         if word in vocabList:
@@ -30,14 +46,25 @@ def setOfWords2Vec(vocabList, inputSet):
     return returnVec
 
 def trainNB0(trainMatrix,trainCategory):
+    """
+    试验样本的训练函数
+    trainMatrix：文档矩阵，每一行一个文档向量
+    trainCategory: 文档类别标签
+    """
+    #文档数
     numTrainDocs = len(trainMatrix)
+    #文档1单词数
     numWords = len(trainMatrix[0])
+    #侮辱性文档的概率
     pAbusive = sum(trainCategory)/float(numTrainDocs)
-    p0Num = ones(numWords); p1Num = ones(numWords)      #change to ones() 
+    p0Num = ones(numWords); p1Num = ones(numWords)      #change to ones()  初始值都为1，这样不会出现概率为0的情况
     p0Denom = 2.0; p1Denom = 2.0                        #change to 2.0
     for i in range(numTrainDocs):
         if trainCategory[i] == 1:
+            #侮辱性文档中 每个单词出现的次数，这里一个文档最多出现的次数为1，
+            #也就是表示这个单词在多少个文档中出现过
             p1Num += trainMatrix[i]
+            #侮辱性文档所有单词数
             p1Denom += sum(trainMatrix[i])
         else:
             p0Num += trainMatrix[i]
@@ -47,6 +74,12 @@ def trainNB0(trainMatrix,trainCategory):
     return p0Vect,p1Vect,pAbusive
 
 def classifyNB(vec2Classify, p0Vec, p1Vec, pClass1):
+    """
+    朴素贝叶斯分类器
+    vec2Classify：测试文档向量
+    p0Vec, p1Vec, pClass1为trainNB0的返回值
+    """
+    #p1 和 p0的分母一样，可以忽略
     p1 = sum(vec2Classify * p1Vec) + log(pClass1)    #element-wise mult
     p0 = sum(vec2Classify * p0Vec) + log(1.0 - pClass1)
     if p1 > p0:
@@ -55,6 +88,13 @@ def classifyNB(vec2Classify, p0Vec, p1Vec, pClass1):
         return 0
     
 def bagOfWords2VecMN(vocabList, inputSet):
+    """
+    词集模型
+    vocabList：词汇表
+    inputSet： 输入文档
+    输出:
+    returnVec：文档向量，向量的每一个元素为单词在文档中出现的次数 （多项式模型）
+    """
     returnVec = [0]*len(vocabList)
     for word in inputSet:
         if word in vocabList:
@@ -62,6 +102,9 @@ def bagOfWords2VecMN(vocabList, inputSet):
     return returnVec
 
 def testingNB():
+    """
+    测试函数
+    """
     listOPosts,listClasses = loadDataSet()
     myVocabList = createVocabList(listOPosts)
     trainMat=[]
@@ -76,11 +119,17 @@ def testingNB():
     print testEntry,'classified as: ',classifyNB(thisDoc,p0V,p1V,pAb)
 
 def textParse(bigString):    #input is big string, #output is word list
+    """
+    解析文本
+    """
     import re
     listOfTokens = re.split(r'\W*', bigString)
     return [tok.lower() for tok in listOfTokens if len(tok) > 2] 
     
 def spamTest():
+    """
+    垃圾邮件过滤
+    """
     docList=[]; classList = []; fullText =[]
     for i in range(1,26):
         wordList = textParse(open('email/spam/%d.txt' % i).read())
@@ -91,8 +140,11 @@ def spamTest():
         docList.append(wordList)
         fullText.extend(wordList)
         classList.append(0)
+    #创建一个包含所有文档中出现的不重复词的列表
     vocabList = createVocabList(docList)#create vocabulary
+    #50个样本
     trainingSet = range(50); testSet=[]           #create test set
+    #取10个作为测试样本
     for i in range(10):
         randIndex = int(random.uniform(0,len(trainingSet)))
         testSet.append(trainingSet[randIndex])
@@ -112,6 +164,8 @@ def spamTest():
     #return vocabList,fullText
 
 def calcMostFreq(vocabList,fullText):
+    """
+    """
     import operator
     freqDict = {}
     for token in vocabList:
@@ -120,6 +174,8 @@ def calcMostFreq(vocabList,fullText):
     return sortedFreq[:30]       
 
 def localWords(feed1,feed0):
+    """
+    """
     import feedparser
     docList=[]; classList = []; fullText =[]
     minLen = min(len(feed1['entries']),len(feed0['entries']))
@@ -155,6 +211,8 @@ def localWords(feed1,feed0):
     return vocabList,p0V,p1V
 
 def getTopWords(ny,sf):
+    """
+    """
     import operator
     vocabList,p0V,p1V=localWords(ny,sf)
     topNY=[]; topSF=[]
@@ -169,3 +227,7 @@ def getTopWords(ny,sf):
     print "NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**NY**"
     for item in sortedNY:
         print item[0]
+        
+if __name__ == "__main__":
+    testingNB()
+    spamTest()

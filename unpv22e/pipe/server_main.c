@@ -1,5 +1,7 @@
 #include	"fifo.h"
 
+//和 client_main 组成一个无情缘关系的客户端与服务器
+
 void	server(int, int);
 
 int

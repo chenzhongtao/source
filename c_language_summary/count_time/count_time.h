@@ -41,7 +41,7 @@ while (0)
 do { \
      TIME_END end = clock();\
      printf(fmt , ##args); \
-     printf(",use time :%f\n" , ((double) (end - start)) / CLOCKS_PER_SEC ); \
+     printf(",use cpu time :%f\n" , ((double) (end - start)) / CLOCKS_PER_SEC ); \
 } \
 while (0)
 

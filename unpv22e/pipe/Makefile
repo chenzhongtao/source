@@ -1,36 +1,59 @@
-include ../Make.defines
 
-PROGS =	mainpipe mainpopen mainfifo \
-		client_fifo server_fifo pipeconf test1 test2 fduplex
+DEBUG := y
 
-all:	${PROGS}
+CC = gcc
 
-mainpipe:	mainpipe.o client.o server.o
-		${CC} ${CFLAGS} -o $@ mainpipe.o client.o server.o ${LIBS}
+ifeq ($(DEBUG), y)
+  DBG_FLAGS := -O0 -Wall -g -DDEBUG -DHAVE_SYS_EPOLL_H
+else
+  DBG_FLAGS := -O2 -Wall -DHAVE_SYS_EPOLL_H
+endif
 
-mainpopen:	mainpopen.o
-		${CC} ${CFLAGS} -o $@ mainpopen.o ${LIBS}
+#
+#  	add compile flags
+#
+CFLAGS += $(DBG_FLAGS)
 
-mainfifo:	mainfifo.o client.o server.o
-		${CC} ${CFLAGS} -o $@ mainfifo.o client.o server.o ${LIBS}
+#CFLAGS += -I$(SW_INC) -I$(USR_INC) 
+#
+#  the lib needed
+#
+LIB_FLAGS =  
 
-client_fifo:	client_main.o client.o
-		${CC} ${CFLAGS} -o $@ client_main.o client.o ${LIBS}
 
-server_fifo:	server_main.o server.o
-		${CC} ${CFLAGS} -o $@ server_main.o server.o ${LIBS}
+#
+#	 the app obj name
+#
+obj = mainpipe fduplex mainpopen mainfifo client_main server_main pipeconf
 
-pipeconf:	pipeconf.o
-		${CC} ${CFLAGS} -o $@ pipeconf.o ${LIBS}
 
-test1:	test1.o
-		${CC} ${CFLAGS} -o $@ test1.o ${LIBS}
 
-test2:	test2.o
-		${CC} ${CFLAGS} -o $@ test2.o ${LIBS}
+default: $(obj)
 
-fduplex:	fduplex.o
-		${CC} ${CFLAGS} -o $@ fduplex.o ${LIBS}
 
-clean:
-		rm -f ${PROGS} ${CLEANFILES}
+mainpipe:mainpipe.c client.c server.c ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
+
+fduplex:fduplex.c  ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
+
+mainpopen:mainpopen.c  ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
+	
+mainfifo:mainfifo.c client.c server.c ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
+	
+client_main:client_main.c  client.c  ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
+	
+server_main:server_main.c  server.c ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
+
+pipeconf:pipeconf.c ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
+
+install:
+	#@install -c $(obj) $(BIN_INSTALL)	
+
+clean: 
+	@rm -f *.o $(obj)

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding=utf-8
 '''
 Created on Feb 16, 2011
 k Means Clustering for Ch10 of Machine Learning in Action
@@ -6,6 +8,9 @@ k Means Clustering for Ch10 of Machine Learning in Action
 from numpy import *
 
 def loadDataSet(fileName):      #general function to parse tab -delimited floats
+    """
+    加载数据集
+    """
     dataMat = []                #assume last column is target value
     fr = open(fileName)
     for line in fr.readlines():
@@ -15,9 +20,15 @@ def loadDataSet(fileName):      #general function to parse tab -delimited floats
     return dataMat
 
 def distEclud(vecA, vecB):
+    """
+    计算两个向量的欧式距离
+    """
     return sqrt(sum(power(vecA - vecB, 2))) #la.norm(vecA-vecB)
 
 def randCent(dataSet, k):
+    """
+    构造k个随机质心
+    """
     n = shape(dataSet)[1]
     centroids = mat(zeros((k,n)))#create centroid mat
     for j in range(n):#create random cluster centers, within bounds of each dimension
@@ -27,6 +38,13 @@ def randCent(dataSet, k):
     return centroids
     
 def kMeans(dataSet, k, distMeas=distEclud, createCent=randCent):
+    """
+    kMeans算法
+    dataSet：数据集
+    k：聚类数
+    distMeas：距离算法
+    createCent：初始质心生成算法
+    """
     m = shape(dataSet)[0]
     clusterAssment = mat(zeros((m,2)))#create mat to assign data points 
                                       #to a centroid, also holds SE of each point
@@ -35,45 +53,72 @@ def kMeans(dataSet, k, distMeas=distEclud, createCent=randCent):
     while clusterChanged:
         clusterChanged = False
         for i in range(m):#for each data point assign it to the closest centroid
-            minDist = inf; minIndex = -1
+            minDist = inf;
+            minIndex = -1
+            #寻找最近的质心
             for j in range(k):
                 distJI = distMeas(centroids[j,:],dataSet[i,:])
                 if distJI < minDist:
-                    minDist = distJI; minIndex = j
+                    minDist = distJI;
+                    minIndex = j
+            # 如果有数据更换了质心(这个条件很强,数据多应该很难达到这点)
             if clusterAssment[i,0] != minIndex: clusterChanged = True
+            #最近质心的index和距离的平方(误差平方和，与质心的误差)
             clusterAssment[i,:] = minIndex,minDist**2
         print centroids
         for cent in range(k):#recalculate centroids
             ptsInClust = dataSet[nonzero(clusterAssment[:,0].A==cent)[0]]#get all the point in this cluster
+            # 计算新的质心
             centroids[cent,:] = mean(ptsInClust, axis=0) #assign centroid to mean 
     return centroids, clusterAssment
 
 def biKmeans(dataSet, k, distMeas=distEclud):
+    """
+    二分K-均值聚类算法
+    dataSet：数据集
+    k：聚类数
+    distMeas：距离算法
+    """
     m = shape(dataSet)[0]
     clusterAssment = mat(zeros((m,2)))
+    #初始质心
     centroid0 = mean(dataSet, axis=0).tolist()[0]
+    #质心列表
     centList =[centroid0] #create a list with one centroid
     for j in range(m):#calc initial Error
+        #样本与质心的误差
         clusterAssment[j,1] = distMeas(mat(centroid0), dataSet[j,:])**2
+    #如果类别数还不够K个，继续分
     while (len(centList) < k):
         lowestSSE = inf
         for i in range(len(centList)):
             ptsInCurrCluster = dataSet[nonzero(clusterAssment[:,0].A==i)[0],:]#get the data points currently in cluster i
+            #每个类中进行kmeans聚合，k=2
             centroidMat, splitClustAss = kMeans(ptsInCurrCluster, 2, distMeas)
+            #需要分的类的 误差平方和
             sseSplit = sum(splitClustAss[:,1])#compare the SSE to the currrent minimum
+            #其他不需要分的类的 误差平方和总和
             sseNotSplit = sum(clusterAssment[nonzero(clusterAssment[:,0].A!=i)[0],1])
             print "sseSplit, and notSplit: ",sseSplit,sseNotSplit
+            #寻找那个类二分后总的误差最小
             if (sseSplit + sseNotSplit) < lowestSSE:
+                #被二分的类号
                 bestCentToSplit = i
+                #二分法后类中心
                 bestNewCents = centroidMat
+                #二分后的误差
                 bestClustAss = splitClustAss.copy()
                 lowestSSE = sseSplit + sseNotSplit
+        ##使用新的类号
         bestClustAss[nonzero(bestClustAss[:,0].A == 1)[0],0] = len(centList) #change 1 to 3,4, or whatever
+        #使用原来的类号
         bestClustAss[nonzero(bestClustAss[:,0].A == 0)[0],0] = bestCentToSplit
         print 'the bestCentToSplit is: ',bestCentToSplit
         print 'the len of bestClustAss is: ', len(bestClustAss)
+        #更新类中心
         centList[bestCentToSplit] = bestNewCents[0,:].tolist()[0]#replace a centroid with two best centroids 
         centList.append(bestNewCents[1,:].tolist()[0])
+        #更新误差
         clusterAssment[nonzero(clusterAssment[:,0].A == bestCentToSplit)[0],:]= bestClustAss#reassign new clusters, and SSE
     return mat(centList), clusterAssment
 
@@ -137,3 +182,7 @@ def clusterClubs(numClust=5):
         ax1.scatter(ptsInCurrCluster[:,0].flatten().A[0], ptsInCurrCluster[:,1].flatten().A[0], marker=markerStyle, s=90)
     ax1.scatter(myCentroids[:,0].flatten().A[0], myCentroids[:,1].flatten().A[0], marker='+', s=300)
     plt.show()
+    
+    
+if __name__ == "__main__":
+    pass

@@ -144,7 +144,7 @@ struct in_pktinfo {
    a length field or not. */
 #ifndef	SUN_LEN
 /* $$.Im SUN_LEN$$ */
-# define	SUN_LEN(su) \
+#define	SUN_LEN(su) \
 	(sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
 #endif
 

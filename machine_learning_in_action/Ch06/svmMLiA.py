@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding=utf-8
+
 '''
 Created on Nov 4, 2010
 Chapter 5 source file for Machine Learing in Action
@@ -7,6 +10,9 @@ from numpy import *
 from time import sleep
 
 def loadDataSet(fileName):
+    """
+    加载数据集
+    """
     dataMat = []; labelMat = []
     fr = open(fileName)
     for line in fr.readlines():
@@ -16,12 +22,20 @@ def loadDataSet(fileName):
     return dataMat,labelMat
 
 def selectJrand(i,m):
+    """
+    i: index
+    m: 样本数
+    返回j 为不等于i的index(随机选)
+    """
     j=i #we want to select any J not equal to i
     while (j==i):
         j = int(random.uniform(0,m))
     return j
-
+    
 def clipAlpha(aj,H,L):
+    """
+    调整Alpha值
+    """
     if aj > H: 
         aj = H
     if L > aj:
@@ -29,8 +43,20 @@ def clipAlpha(aj,H,L):
     return aj
 
 def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
-    dataMatrix = mat(dataMatIn); labelMat = mat(classLabels).transpose()
-    b = 0; m,n = shape(dataMatrix)
+    """
+    简化版SMO算法
+    dataMatIn：数据集
+    classLabels：类别标签
+    C：常数
+    toler：容错率
+    maxIter：最大循环数
+    """
+    dataMatrix = mat(dataMatIn);
+    # 转为1列
+    labelMat = mat(classLabels).transpose()
+    b = 0;
+    # m为样本数， n为特征数
+    m,n = shape(dataMatrix)
     alphas = mat(zeros((m,1)))
     iter = 0
     while (iter < maxIter):
@@ -345,3 +371,12 @@ def smoPK(dataMatIn, classLabels, C, toler, maxIter):    #full Platt SMO
         elif (alphaPairsChanged == 0): entireSet = True  
         print "iteration number: %d" % iter
     return oS.b,oS.alphas
+
+
+if __name__ == "__main__":
+    dataMat,labelMat = loadDataSet("testSet.txt")
+    C = 0.6
+    toler = 0.001
+    maxIter = 40
+    b,alphas = smoSimple(dataMat,labelMat, C, toler, maxIter)
+    

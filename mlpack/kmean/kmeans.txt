@@ -1,0 +1,92 @@
+[root@swift-1 ~]# mlpack_kmeans --help
+K-Means Clustering
+
+  This program performs K-Means clustering on the given dataset, storing the
+  learned cluster assignments either as a column of labels in the file
+  containing the input dataset or in a separate file.  Empty clusters are not
+  allowed by default; when a cluster becomes empty, the point furthest from the
+  centroid of the cluster with maximum variance is taken to fill that cluster.
+
+  Optionally, the Bradley and Fayyad approach ("Refining initial points for
+  k-means clustering", 1998) can be used to select initial points 选择初始点 by specifying
+  the --refined_start (-r) option.  This approach works by taking random samples
+  of the dataset; to specify the number of samples, the --samples parameter is
+  used, and to specify the percentage of the dataset to be used in each sample,
+  the --percentage parameter is used (it should be a value between 0.0 and 1.0).
+
+
+Required options:
+
+  --clusters (-c) [int]         Number of clusters to find.
+  --inputFile (-i) [string]     Input dataset to perform clustering on.
+
+Options:
+
+  --allow_empty_clusters (-e)   Allow empty clusters to be created.
+  --centroid_file (-C) [string]
+                                If specified, the centroids of each cluster will
+                                be written to the given file.  Default value
+                                ''.
+  --help (-h)                   Default help info.
+  --in_place (-P)               If specified, a column of the learned cluster
+                                assignments will be added to the input dataset
+                                file.  In this case, --outputFile is not
+                                necessary.
+  --info [string]               Get help on a specific module or option.
+                                Default value ''.
+  --initial_centroids (-I) [string]
+                                Start with the specified initial centroids.
+                                Default value ''.
+  --labels_only (-l)            Only output labels into output file.
+  --max_iterations (-m) [int]   Maximum number of iterations before K-Means
+                                terminates.  Default value 1000. 指定迭代的最大次数
+  --output_file (-o) [string]   File to write output labels or labeled data to.
+                                Default value 'output.csv'.
+  --overclustering (-O) [double]
+                                Finds (overclustering * clusters) clusters, then
+                                merges them together until only the desired
+                                number of clusters are left.  Default value 1.
+  --percentage (-p) [double]    Percentage of dataset to use for each refined
+                                start sampling (use when --refined_start is
+                                specified).  Default value 0.02.
+  --refined_start (-r)          Use the refined initial point strategy by
+                                Bradley and Fayyad to choose initial points.
+  --samplings (-S) [int]        Number of samplings to perform for refined start
+                                (use when --refined_start is specified).
+                                Default value 100.
+  --seed (-s) [int]             Random seed.  If 0, 'std::time(NULL)' is used.
+                                Default value 0.
+  --verbose (-v)                Display informational messages and the full list
+                                of parameters and timers at the end of
+                                execution.
+  --version (-V)                Display the version of mlpack.
+
+For further information, including relevant papers, citations, and theory,
+consult the documentation found at http://www.mlpack.org or included with your
+distribution of MLPACK.
+
+
+[root@swift-1 kmean]#mlpack_kmeans -c 3 -i kmean_dataset.csv -v -o assignments.csv -C centroids.csv
+输出数据assignment.csv 是在输入数据后添加一个类标号，centroids.csv为多个类的类中心，-c指定类的个数
+
+
+下面的几个参数还没搞透
+Using Bradley-Fayyad "refined start"
+
+The method proposed by Bradley and Fayyad in their paper "Refining initial points for k-means clustering" is 
+implemented in mlpack. This strategy samples points from the dataset and runs k-means clustering on those points 
+multiple times, saving the resulting clusters. Then, k-means clustering is run on those clusters, yielding the 
+original number of clusters. The centroids of those resulting clusters are used as initial centroids for k-means
+ clustering on the entire dataset.
+
+This technique generally gives better initial points than the default random partitioning, but depending on 
+the parameters, it can take much longer. This initialization technique is enabled with the -r (--refined_start) 
+option. The -S (--samplings) parameter controls how many samplings of the dataset are performed, and the -p (--percentage)
+ parameter controls how much of the dataset is randomly sampled for each sampling (it must be between 0.0 and 1.0). 
+ For more information on the refined start technique, see the paper referenced in the introduction of this tutorial.
+
+The example below performs k-means clustering, giving 5 clusters, using the refined start technique, sampling 10% of 
+the dataset 25 times to produce the initial centroids.
+
+$ kmeans -c 5 -i dataset.csv -v -o assignments.csv -r -S 25 -p 0.2
+

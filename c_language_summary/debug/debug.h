@@ -11,7 +11,8 @@ extern "C"{
 
 typedef enum {
         D_LOG_TRACE,
-        D_LOG_INFO,   
+        D_LOG_INFO,
+        D_LOG_WARN,
         D_LOG_ERR,    
         D_LOG_CRIT,   
         D_LOG_FATAL,  
@@ -21,7 +22,7 @@ typedef enum {
 #define LOG_PRINT_LEVEL D_LOG_INFO
 
 
-// 注意: 头文件不要定义变量,或函数，否则可能会重复定义
+// 注意: 头文件不要定义变量,或函数，否则可能会重复定义  //补充:把inline函数的定义放在头文件中 http://www.cnblogs.com/mydomain/archive/2013/04/06/3001859.html
 // 定义各个级别日志的简称 
 //char* LOG_NAME[] = {
 //      "TRACE",   

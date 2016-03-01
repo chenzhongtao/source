@@ -1,53 +1,45 @@
-include ../Make.defines
 
-PROGS =	mqcreate1 mqcreate mqgetattr \
-		mqnotifysig1 mqnotifysig2 mqnotifysig3 mqnotifysig4 mqnotifysig5 \
-		mqreceive mqsend mqsysconf mqunlink \
-		test1
+DEBUG := y
 
-all:	${PROGS}
+CC = gcc
 
-mqcreate1:	mqcreate1.o
-		${CC} ${CFLAGS} -o $@ mqcreate1.o ${LIBS}
+ifeq ($(DEBUG), y)
+  DBG_FLAGS := -O0 -Wall -g -DDEBUG -DHAVE_SYS_EPOLL_H
+else
+  DBG_FLAGS := -O2 -Wall -DHAVE_SYS_EPOLL_H
+endif
 
-mqcreate:	mqcreate.o
-		${CC} ${CFLAGS} -o $@ mqcreate.o ${LIBS}
+#
+#  	add compile flags
+#
+CFLAGS += $(DBG_FLAGS)
 
-mqgetattr:	mqgetattr.o
-		${CC} ${CFLAGS} -o $@ mqgetattr.o ${LIBS}
+#CFLAGS += -I$(SW_INC) -I$(USR_INC) 
+#
+#  the lib needed
+#
+LIB_FLAGS =  -lrt
 
-mqnotifysig1:	mqnotifysig1.o
-		${CC} ${CFLAGS} -o $@ mqnotifysig1.o ${LIBS}
 
-mqnotifysig2:	mqnotifysig2.o
-		${CC} ${CFLAGS} -o $@ mqnotifysig2.o ${LIBS}
+#
+#	 the app obj name
+#
+obj = mqcreate mqunlink
 
-mqnotifysig3:	mqnotifysig3.o
-		${CC} ${CFLAGS} -o $@ mqnotifysig3.o ${LIBS}
 
-mqnotifysig4:	mqnotifysig4.o
-		${CC} ${CFLAGS} -o $@ mqnotifysig4.o ${LIBS}
 
-mqnotifysig5:	mqnotifysig5.o
-		${CC} ${CFLAGS} -o $@ mqnotifysig5.o ${LIBS}
+default: $(obj)
 
-mqnotifythread1:	mqnotifythread1.o
-		${CC} ${CFLAGS} -o $@ mqnotifythread1.o ${LIBS}
 
-mqreceive:	mqreceive.o
-		${CC} ${CFLAGS} -o $@ mqreceive.o ${LIBS}
+mqcreate:mqcreate.c ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
+mqunlink:mqunlink.c ../lib/lib.c 
+	$(CC) $(CFLAGS) -o $@  $^  $(LIB_FLAGS)
 
-mqsend:	mqsend.o
-		${CC} ${CFLAGS} -o $@ mqsend.o ${LIBS}
 
-mqsysconf:	mqsysconf.o
-		${CC} ${CFLAGS} -o $@ mqsysconf.o ${LIBS}
 
-mqunlink:	mqunlink.o
-		${CC} ${CFLAGS} -o $@ mqunlink.o ${LIBS}
+install:
+	#@install -c $(obj) $(BIN_INSTALL)	
 
-test1:	test1.o
-		${CC} ${CFLAGS} -o $@ test1.o ${LIBS}
-
-clean:
-		rm -f ${PROGS} ${CLEANFILES}
+clean: 
+	@rm -f *.o $(obj)

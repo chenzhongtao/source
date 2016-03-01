@@ -1,6 +1,7 @@
 /* include mesg_recv */
 #include	"mesg.h"
 
+// mptr的内存为调用者申请
 ssize_t
 mesg_recv(int fd, struct mymesg *mptr)
 {
@@ -8,11 +9,12 @@ mesg_recv(int fd, struct mymesg *mptr)
 	ssize_t	n;
 
 		/* 4read message header first, to get len of data that follows */
+    // 分两次读，先读头部大小
 	if ( (n = Read(fd, mptr, MESGHDRSIZE)) == 0)
 		return(0);		/* end of file */
 	else if (n != MESGHDRSIZE)
 		err_quit("message header: expected %d, got %d", MESGHDRSIZE, n);
-
+    // 读数据部分
 	if ( (len = mptr->mesg_len) > 0)
 		if ( (n = Read(fd, mptr->mesg_data, len)) != len)
 			err_quit("message data: expected %d, got %d", len, n);

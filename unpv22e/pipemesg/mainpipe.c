@@ -1,4 +1,4 @@
-#include	"unpipc.h"
+#include	"../lib/unpipc.h"
 
 void	client(int, int), server(int, int);
 

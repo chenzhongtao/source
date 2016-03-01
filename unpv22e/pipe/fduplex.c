@@ -1,4 +1,7 @@
-#include	"unpipc.h"
+#include	"../lib/unpipc.h"
+
+
+// linux 不支持这种 全双工
 
 int
 main(int argc, char **argv)

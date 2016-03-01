@@ -18,17 +18,21 @@ from numpy import *
 import operator
 from os import listdir
 
-"""
-inx: 分类的输入向量
-dataSet：输入的训练样本集
-lables: 标签向量
-k: 最近邻居的数目
-"""
+
 def classify0(inX, dataSet, labels, k):
+    """
+    inx: 分类的输入向量
+    dataSet：输入的训练样本集
+    lables: 标签向量
+    k: 最近邻居的数目
+    """
     # 矩阵的行数
     dataSetSize = dataSet.shape[0]
+    # 重复多少份
     diffMat = tile(inX, (dataSetSize,1)) - dataSet
+    # 矩阵按位求 平方
     sqDiffMat = diffMat**2
+    #axis=1为行，0为列
     sqDistances = sqDiffMat.sum(axis=1)
     distances = sqDistances**0.5
     sortedDistIndicies = distances.argsort()     
@@ -36,6 +40,7 @@ def classify0(inX, dataSet, labels, k):
     for i in range(k):
         voteIlabel = labels[sortedDistIndicies[i]]
         classCount[voteIlabel] = classCount.get(voteIlabel,0) + 1
+    #按照字典是值排序
     sortedClassCount = sorted(classCount.iteritems(), key=operator.itemgetter(1), reverse=True)
     return sortedClassCount[0][0]
 
@@ -44,7 +49,7 @@ def createDataSet():
     labels = ['A','A','B','B']
     return group, labels
 
-#把文件内容转为矩阵
+#把文件内容转为矩阵,datingTestSet.txt,约会数据，三个特征，最后一列为标签
 def file2matrix(filename):
     fr = open(filename)
     numberOfLines = len(fr.readlines())         #get the number of lines in the file
@@ -62,11 +67,19 @@ def file2matrix(filename):
     return returnMat,classLabelVector
     
 def autoNorm(dataSet):
+    """
+    数据归一化
+    dataSet：数据集
+    """
+    #每一列最小值
     minVals = dataSet.min(0)
     maxVals = dataSet.max(0)
+    #每个特征的取值范围
     ranges = maxVals - minVals
     normDataSet = zeros(shape(dataSet))
     m = dataSet.shape[0]
+    # tile 按行把矩阵重复m次，那列把矩阵重复1次， 可以把矩阵minVals看成块，
+    # tile后生成一个 m*1 一个块的大矩阵
     normDataSet = dataSet - tile(minVals, (m,1))
     normDataSet = normDataSet/tile(ranges, (m,1))   #element wise divide
     return normDataSet, ranges, minVals
@@ -86,6 +99,10 @@ def datingClassTest():
     print errorCount
     
 def img2vector(filename):
+    """
+    图片像素32*32
+    把文本数据转为向量
+    """
     returnVect = zeros((1,1024))
     fr = open(filename)
     for i in range(32):
@@ -102,7 +119,7 @@ def handwritingClassTest():
     for i in range(m):
         fileNameStr = trainingFileList[i]
         fileStr = fileNameStr.split('.')[0]     #take off .txt
-        classNumStr = int(fileStr.split('_')[0])
+        classNumStr = int(fileStr.split('_')[0]) #提取文件名中的类名
         hwLabels.append(classNumStr)
         trainingMat[i,:] = img2vector('trainingDigits/%s' % fileNameStr)
     testFileList = listdir('testDigits')        #iterate through the test set
@@ -118,3 +135,8 @@ def handwritingClassTest():
         if (classifierResult != classNumStr): errorCount += 1.0
     print "\nthe total number of errors is: %d" % errorCount
     print "\nthe total error rate is: %f" % (errorCount/float(mTest))
+    
+if __name__ == "__main__":
+    datingClassTest()
+    #handwritingClassTest()
+    

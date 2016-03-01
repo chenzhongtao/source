@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding=utf-8
+
 '''
 Created on Jan 8, 2011
 
@@ -6,8 +9,13 @@ Created on Jan 8, 2011
 from numpy import *
 
 def loadDataSet(fileName):      #general function to parse tab -delimited floats
+    """
+    加载数据集
+    """
+    #特征数
     numFeat = len(open(fileName).readline().split('\t')) - 1 #get number of fields 
-    dataMat = []; labelMat = []
+    dataMat = [];
+    labelMat = []
     fr = open(fileName)
     for line in fr.readlines():
         lineArr =[]
@@ -19,17 +27,34 @@ def loadDataSet(fileName):      #general function to parse tab -delimited floats
     return dataMat,labelMat
 
 def standRegres(xArr,yArr):
-    xMat = mat(xArr); yMat = mat(yArr).T
+    """
+    标准线型回归
+    xArr：数据集，x0 = 1
+    yArr：目标值
+    """
+    xMat = mat(xArr);
+    yMat = mat(yArr).T
     xTx = xMat.T*xMat
+    #判断是否可逆
     if linalg.det(xTx) == 0.0:
         print "This matrix is singular, cannot do inverse"
         return
+    #计算回归系数
     ws = xTx.I * (xMat.T*yMat)
     return ws
 
 def lwlr(testPoint,xArr,yArr,k=1.0):
-    xMat = mat(xArr); yMat = mat(yArr).T
+    """
+    局部加权线性回归
+    testPoint：测试点
+    xArr：数据集
+    yArr：目标值
+    k:高斯核系数, k=1时，如同将将所有看成等权重，较小的k得到较低的误差，但可能会过拟合，对预测结果较差
+    """
+    xMat = mat(xArr);
+    yMat = mat(yArr).T
     m = shape(xMat)[0]
+    #权重，使用高斯核计算，每个测试点都要计算一次权重，样本点离测试点越近，权重越大
     weights = mat(eye((m)))
     for j in range(m):                      #next 2 lines create weights matrix
         diffMat = testPoint - xMat[j,:]     #
@@ -42,6 +67,13 @@ def lwlr(testPoint,xArr,yArr,k=1.0):
     return testPoint * ws
 
 def lwlrTest(testArr,xArr,yArr,k=1.0):  #loops over all the data points and applies lwlr to each one
+    """
+    局部加权线性回归测试函数
+    testArr：测试数据集
+    xArr：数据集
+    yArr：目标值
+    k:高斯核系数
+    """
     m = shape(testArr)[0]
     yHat = zeros(m)
     for i in range(m):
@@ -57,10 +89,19 @@ def lwlrTestPlot(xArr,yArr,k=1.0):  #same thing as lwlrTest except it sorts X fi
     return yHat,xCopy
 
 def rssError(yArr,yHatArr): #yArr and yHatArr both need to be arrays
+    """
+    计算rss
+    """
     return ((yArr-yHatArr)**2).sum()
 
+#如何特征比样本还多(n>m),输入数据的矩阵x不是满秩矩阵，(X.T*X)求逆会出现问题
+#所以引入了下面的岭回归，lasso法，前向逐步回归
 def ridgeRegres(xMat,yMat,lam=0.2):
+    """
+    岭回归
+    """
     xTx = xMat.T*xMat
+    # 加入对角阵，使其非奇异，lam也可以看成是惩罚项，能够减少不重要的参数
     denom = xTx + eye(shape(xMat)[1])*lam
     if linalg.det(denom) == 0.0:
         print "This matrix is singular, cannot do inverse"
@@ -69,21 +110,34 @@ def ridgeRegres(xMat,yMat,lam=0.2):
     return ws
     
 def ridgeTest(xArr,yArr):
-    xMat = mat(xArr); yMat=mat(yArr).T
+    """
+    岭回归测试函数
+    xArr：数据集
+    yArr：目标值
+    """
+    xMat = mat(xArr);
+    yMat=mat(yArr).T
     yMean = mean(yMat,0)
     yMat = yMat - yMean     #to eliminate X0 take mean off of Y
     #regularize X's
+    #求均值，列方向(对特征 归一化)
     xMeans = mean(xMat,0)   #calc mean then subtract it off
+    #求方差
     xVar = var(xMat,0)      #calc variance of Xi then divide by it
+    #数据归一化
     xMat = (xMat - xMeans)/xVar
     numTestPts = 30
     wMat = zeros((numTestPts,shape(xMat)[1]))
+    #遍历不同的lam
     for i in range(numTestPts):
         ws = ridgeRegres(xMat,yMat,exp(i-10))
         wMat[i,:]=ws.T
     return wMat
 
 def regularize(xMat):#regularize by columns
+    """
+    对数据归一化 按列
+    """
     inMat = xMat.copy()
     inMeans = mean(inMat,0)   #calc mean then subtract it off
     inVar = var(inMat,0)      #calc variance of Xi then divide by it
@@ -91,22 +145,37 @@ def regularize(xMat):#regularize by columns
     return inMat
 
 def stageWise(xArr,yArr,eps=0.01,numIt=100):
-    xMat = mat(xArr); yMat=mat(yArr).T
+    """
+    向前逐步线性回归，属于贪心算法，(不断修改系数w)
+    xArr：数据集
+    yArr：目标值
+    eps: 每一步大小
+    numIt：迭代次数
+    """
+    xMat = mat(xArr);
+    #转成一列
+    yMat=mat(yArr).T
     yMean = mean(yMat,0)
     yMat = yMat - yMean     #can also regularize ys but will get smaller coef
     xMat = regularize(xMat)
     m,n=shape(xMat)
     #returnMat = zeros((numIt,n)) #testing code remove
-    ws = zeros((n,1)); wsTest = ws.copy(); wsMax = ws.copy()
+    ws = zeros((n,1));
+    wsTest = ws.copy();
+    wsMax = ws.copy()
     for i in range(numIt):
         print ws.T
-        lowestError = inf; 
+        #设置误差为无穷大
+        lowestError = inf;
+        #遍历每个特征
         for j in range(n):
+            #增大或缩小或不变 
             for sign in [-1,1]:
                 wsTest = ws.copy()
                 wsTest[j] += eps*sign
                 yTest = xMat*wsTest
                 rssE = rssError(yMat.A,yTest.A)
+                #保存最小的rss
                 if rssE < lowestError:
                     lowestError = rssE
                     wsMax = wsTest
@@ -210,3 +279,33 @@ def crossValidation(xArr,yArr,numVal=10):
     unReg = bestWeights/varX
     print "the best model from Ridge Regression is:\n",unReg
     print "with constant term: ",-1*sum(multiply(meanX,unReg)) + mean(yMat)
+    
+if __name__ == "__main__":
+    dataMat,labelMat = loadDataSet("ex0.txt")
+    yHat1,xCopy1 = lwlrTestPlot(dataMat,labelMat, k=1)
+    yHat2,xCopy2 = lwlrTestPlot(dataMat,labelMat, k=0.01)
+    yHat3,xCopy3 = lwlrTestPlot(dataMat,labelMat, k=0.003)
+    
+    #xMat=mat(xArr)
+    #srtInd = xMat[:,1].argsort(0)
+    #xSort=xMat[srtInd][:,0,:]
+    #Now you can plot this with Matplotlib:
+    import matplotlib.pyplot as plt
+    fig = plt.figure(figsize=(5,12))
+    ax1 = fig.add_subplot(311)
+    ax1.plot(xCopy1[:,1],yHat1)
+    #[<matplotlib.lines.Line2D object at 0x03639550>]
+    #散点图
+    #ax.scatter(mat(dataMat)[:,1].flatten().A[0], mat(labelMat).T.flatten().A[0] , s=2,c='red')
+    ax1.scatter(array(dataMat)[:,1], labelMat , s=2, color="r")
+    #<matplotlib.collections.PathCollection object at 0x03859110>
+    
+    ax2 = fig.add_subplot(312)
+    ax2.plot(xCopy2[:,1],yHat2)
+    ax2.scatter(array(dataMat)[:,1], labelMat , s=2, color="r")
+    ax3 = fig.add_subplot(313)
+    ax3.plot(xCopy3[:,1],yHat3)
+    ax3.scatter(array(dataMat)[:,1], labelMat , s=2, color="r")
+    plt.show()
+    
+    
