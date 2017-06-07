@@ -18,7 +18,7 @@ CFLAGS += $(DBG_FLAGS)
 #
 #  the lib needed
 #
-LIB_FLAGS =  
+LIB_FLAGS =  -lrt
 
 
 #
